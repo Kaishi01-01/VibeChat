@@ -9,7 +9,8 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // Menambahkan getDocs untuk fungsi ceklis biru
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc, getDocs, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
           apiKey: "AIzaSyDCKgDIQPXlxTzSssUReFFw34OVOogru00",
@@ -22,7 +23,7 @@
 
         const app = initializeApp(firebaseConfig);
         window.db = getFirestore(app);
-        window.fb = { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc, updateDoc, arrayUnion, deleteDoc };
+        window.fb = { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc, getDocs, updateDoc, arrayUnion, deleteDoc };
     </script>
 
     <style>
@@ -34,6 +35,9 @@
         .active-tab { display: block; }
         .bg-vibe { background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); background-blend-mode: overlay; background-color: #0b141a; }
         .sultan-ring { border: 3px solid #00a884; padding: 2px; }
+        /* Style khusus untuk balon chat Sultan */
+        .bubble-me { background: #005c4b; border-radius: 12px 0 12px 12px; }
+        .bubble-them { background: #202c33; border-radius: 0 12px 12px 12px; }
     </style>
 </head>
 <body>
@@ -46,8 +50,8 @@
             </div>
             <h2 class="text-4xl font-black mb-10 italic">VIBE<span class="text-[#00a884]">CHAT</span></h2>
             <div class="w-full space-y-4">
-                <input type="text" id="log-name" placeholder="Nama Sultan" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none font-bold">
-                <input type="tel" id="log-phone" placeholder="Nomor HP (08...)" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none">
+                <input type="text" id="log-name" placeholder="Nama Sultan" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none font-bold text-white">
+                <input type="tel" id="log-phone" placeholder="Nomor HP (08...)" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none text-white">
                 <button onclick="handleLogin()" class="w-full bg-[#00a884] py-5 rounded-2xl font-black text-[#111b21] shadow-xl uppercase">Login</button>
             </div>
         </section>
@@ -107,7 +111,7 @@
                     <p id="room-status" class="text-[11px] font-black text-gray-500">Offline</p>
                 </div>
             </header>
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4"></div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-2"></div>
             <footer class="p-4 bg-[#202c33] flex gap-3 items-center">
                 <input type="text" id="msg-input" placeholder="Kirim vibe..." class="flex-1 bg-[#2a3942] p-4 rounded-2xl outline-none text-white text-sm">
                 <button onclick="actionSendMessage()" class="bg-[#00a884] w-14 h-14 rounded-full flex items-center justify-center text-[#111b21] shadow-xl"><i class="fas fa-paper-plane"></i></button>
@@ -167,10 +171,10 @@
 
         <div id="modal-new" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-8 backdrop-blur-md">
             <div class="bg-[#202c33] w-full rounded-[3rem] p-10 border border-white/5">
-                <h3 class="text-xl font-black mb-8 text-center uppercase">Vibe Baru</h3>
-                <input type="tel" id="new-p" placeholder="Nomor HP Sultan" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none mb-4 font-bold">
+                <h3 class="text-xl font-black mb-8 text-center uppercase text-white">Vibe Baru</h3>
+                <input type="tel" id="new-p" placeholder="Nomor HP Sultan" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none mb-4 font-bold text-white">
                 <button onclick="actionStartChat()" class="w-full bg-[#00a884] py-5 rounded-2xl font-black text-[#111b21] mb-6 shadow-lg">Mulai Chat</button>
-                <input type="text" id="new-g" placeholder="Nama Grup" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none mb-4 font-bold">
+                <input type="text" id="new-g" placeholder="Nama Grup" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none mb-4 font-bold text-white">
                 <button onclick="actionCreateGroup()" class="w-full bg-blue-600 py-5 rounded-2xl font-black text-white shadow-lg">Buat Grup</button>
                 <p onclick="closeModalNew()" class="text-center text-gray-500 mt-6 cursor-pointer font-bold uppercase text-xs">Batal</p>
             </div>
@@ -185,7 +189,15 @@
         const DEFAULT_USER = "https://files.catbox.moe/oqghhu.jpg";
         const DEFAULT_GROUP = "https://files.catbox.moe/k53zch.jpg";
 
-        // --- TIME AGNOSTIC SULTAN ---
+        // --- FUNGSI JAM REAL-TIME ---
+        function formatTime(timestamp) {
+            if (!timestamp) return "";
+            const date = timestamp.toDate();
+            let h = date.getHours().toString().padStart(2, '0');
+            let m = date.getMinutes().toString().padStart(2, '0');
+            return `${h}:${m}`;
+        }
+
         function getRelativeTime(timestamp) {
             if (!timestamp) return "Baru saja";
             const now = new Date();
@@ -197,7 +209,6 @@
             return "Kemarin";
         }
 
-        // --- PRESENCE ---
         function updatePresence(isOnline) {
             if(!myPhone) return;
             window.fb.updateDoc(window.fb.doc(window.db, "users", myPhone), {
@@ -207,7 +218,6 @@
         }
         document.addEventListener('visibilitychange', () => updatePresence(document.visibilityState === 'visible'));
 
-        // --- AUTH ---
         window.handleLogin = async () => {
             const n = document.getElementById('log-name').value;
             const p = document.getElementById('log-phone').value;
@@ -225,7 +235,6 @@
             document.getElementById('page-main').classList.add('active-page');
             updatePresence(true);
 
-            // Listen Chats
             window.fb.onSnapshot(window.fb.query(window.fb.collection(window.db, "users", myPhone, "recent"), window.fb.orderBy("lastUpdate", "desc")), snap => {
                 const box = document.getElementById('tab-chat'); box.innerHTML = "";
                 snap.forEach(d => {
@@ -241,7 +250,6 @@
                 });
             });
 
-            // Listen Status + Auto Delete 24h
             window.fb.onSnapshot(window.fb.query(window.fb.collection(window.db, "status"), window.fb.orderBy("time", "desc")), snap => {
                 const box = document.getElementById('status-list'); box.innerHTML = "";
                 const limit24h = new Date(Date.now() - 86400000);
@@ -260,7 +268,6 @@
                 });
             });
 
-            // My Data
             window.fb.getDoc(window.fb.doc(window.db, "users", myPhone)).then(s => {
                 const u = s.data();
                 document.getElementById('pr-my-name').value = u.name;
@@ -270,13 +277,25 @@
             });
         }
 
-        // --- CHAT ---
+        // --- OPEN CHAT (DENGAN JAM & CEKLIS) ---
         window.openChatRoom = (id, name, photo, isGroup) => {
             activeRoom = { id, name, photo, isGroup };
             document.getElementById('room-name').innerText = name;
             document.getElementById('room-img').src = photo;
             document.getElementById('page-main').classList.remove('active-page');
             document.getElementById('page-chat-room').classList.add('active-page');
+
+            // Fitur Baca Pesan
+            const markAsRead = async () => {
+                const q = window.fb.query(window.fb.collection(window.db, "chats", id, "messages"));
+                const snap = await window.fb.getDocs(q);
+                snap.forEach(d => {
+                    if(d.data().sender !== myPhone && d.data().status !== 'read') {
+                        window.fb.updateDoc(window.fb.doc(window.db, "chats", id, "messages", d.id), { status: 'read' });
+                    }
+                });
+            };
+            markAsRead();
 
             if(!isGroup) {
                 const targetNum = id.replace(myPhone, "").replace("_", "");
@@ -286,23 +305,33 @@
                     st.innerText = pres;
                     st.className = `text-[11px] font-black ${pres === 'Online' ? 'text-[#00a884]' : 'text-gray-500'}`;
                 });
-            } else {
-                window.fb.onSnapshot(window.fb.doc(window.db, "chats", id), ds => {
-                    if(ds.exists()) {
-                        document.getElementById('room-name').innerText = ds.data().name || name;
-                        document.getElementById('room-img').src = ds.data().photo || photo;
-                    }
-                });
             }
 
             window.fb.onSnapshot(window.fb.query(window.fb.collection(window.db, "chats", id, "messages"), window.fb.orderBy("time", "asc")), snap => {
                 const box = document.getElementById('chat-messages'); box.innerHTML = "";
                 snap.forEach(d => {
                     const m = d.data(); const isMe = m.sender === myPhone;
+                    const timeStr = formatTime(m.time);
+                    
                     if(m.sender === "SYSTEM") {
                         box.innerHTML += `<div class="flex justify-center my-2"><p class="bg-black/20 text-[10px] px-3 py-1 rounded-full text-gray-400 font-bold border border-white/5">${m.text}</p></div>`;
                     } else {
-                        box.innerHTML += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}"><div class="${isMe ? 'bg-[#005c4b]' : 'bg-[#202c33]'} p-4 rounded-2xl max-w-[85%] shadow-md"><p class="text-white text-sm">${m.text}</p></div></div>`;
+                        let statusIcon = "";
+                        if(isMe) {
+                            const color = m.status === 'read' ? 'text-blue-400' : 'text-gray-500';
+                            statusIcon = `<i class="fas fa-check-double ${color} text-[9px] ml-1"></i>`;
+                        }
+
+                        box.innerHTML += `
+                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-1">
+                            <div class="${isMe ? 'bubble-me' : 'bubble-them'} p-2 px-3 shadow-md relative min-w-[80px] max-w-[85%]">
+                                <p class="text-white text-[14px] leading-tight pr-10 mb-1">${m.text}</p>
+                                <div class="absolute bottom-1 right-2 flex items-center gap-1">
+                                    <span class="text-[9px] text-gray-300 opacity-70 font-bold">${timeStr}</span>
+                                    ${statusIcon}
+                                </div>
+                            </div>
+                        </div>`;
                     }
                 });
                 box.scrollTop = box.scrollHeight;
@@ -313,7 +342,13 @@
             const inp = document.getElementById('msg-input'); if(!inp.value) return;
             const txt = inp.value; inp.value = "";
             const me = (await window.fb.getDoc(window.fb.doc(window.db, "users", myPhone))).data();
-            await window.fb.addDoc(window.fb.collection(window.db, "chats", activeRoom.id, "messages"), { sender: myPhone, text: txt, time: window.fb.serverTimestamp() });
+            
+            await window.fb.addDoc(window.fb.collection(window.db, "chats", activeRoom.id, "messages"), { 
+                sender: myPhone, 
+                text: txt, 
+                time: window.fb.serverTimestamp(),
+                status: 'sent' 
+            });
             
             const up = { id: activeRoom.id, name: activeRoom.name, photo: activeRoom.photo, isGroup: activeRoom.isGroup, lastMsg: txt, lastUpdate: window.fb.serverTimestamp() };
             await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", activeRoom.id), up, { merge: true });
@@ -328,7 +363,6 @@
             document.getElementById('page-info').classList.remove('hidden');
             document.getElementById('info-img').src = activeRoom.photo;
             document.getElementById('info-name').innerText = activeRoom.name;
-
             document.getElementById('btn-edit-photo').classList.add('hidden');
             document.getElementById('btn-edit-bio').classList.add('hidden');
             document.getElementById('btn-add-member').classList.add('hidden');
@@ -337,18 +371,15 @@
                 const gRef = await window.fb.getDoc(window.fb.doc(window.db, "chats", activeRoom.id));
                 const gData = gRef.data();
                 const isAdmin = gData.admin === myPhone;
-
                 document.getElementById('info-tag').innerText = isAdmin ? "Grup (Anda Admin)" : "Vibe Group";
                 document.getElementById('info-phone').innerText = "ID: " + activeRoom.id;
                 document.getElementById('info-bio').innerText = gData.bio || "Premium Members";
                 document.getElementById('info-section-members').classList.remove('hidden');
-
                 if(isAdmin) {
                     document.getElementById('btn-edit-photo').classList.remove('hidden');
                     document.getElementById('btn-edit-bio').classList.remove('hidden');
                     document.getElementById('btn-add-member').classList.remove('hidden');
                 }
-
                 window.fb.onSnapshot(window.fb.doc(window.db, "chats", activeRoom.id), async ds => {
                     const box = document.getElementById('info-members-list'); box.innerHTML = "";
                     const members = ds.data()?.members || [];
