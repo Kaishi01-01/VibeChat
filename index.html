@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VibeChat Sultan v45 - ULTIMATE ADMIN & STATUS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDCKgDIQPXlxTzSssUReFFw34OVOogru00",
+          authDomain: "vibechat-project-3677c.firebaseapp.com",
+          projectId: "vibechat-project-3677c",
+          storageBucket: "vibechat-project-3677c.firebasestorage.app",
+          messagingSenderId: "76843871421",
+          appId: "1:76843871421:web:0698112029a2184a4a1bd4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        window.db = getFirestore(app);
+        window.fb = { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, setDoc, doc, getDoc, updateDoc, arrayUnion, deleteDoc };
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+        body { font-family: 'Outfit', sans-serif; background: #0b141a; color: #e9edef; overflow: hidden; height: 100vh; }
+        .page { display: none; height: 100%; flex-direction: column; }
+        .active-page { display: flex; }
+        .tab-content { display: none; height: 100%; overflow-y: auto; padding-bottom: 120px; }
+        .active-tab { display: block; }
+        .bg-vibe { background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png"); background-blend-mode: overlay; background-color: #0b141a; }
+        .sultan-ring { border: 3px solid #00a884; padding: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-md mx-auto h-screen relative bg-[#111b21] shadow-2xl overflow-hidden flex flex-col">
+        
+        <section id="page-login" class="page active-page p-10 justify-center items-center text-center">
+            <div class="bg-gradient-to-tr from-[#00a884] to-[#00efc0] w-24 h-24 rounded-3xl mx-auto flex items-center justify-center mb-8 shadow-2xl rotate-12">
+                <i class="fas fa-crown text-[#111b21] text-5xl"></i>
+            </div>
+            <h2 class="text-4xl font-black mb-10 italic">VIBE<span class="text-[#00a884]">CHAT</span></h2>
+            <div class="w-full space-y-4">
+                <input type="text" id="log-name" placeholder="Nama Sultan" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none font-bold">
+                <input type="tel" id="log-phone" placeholder="Nomor HP (08...)" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none">
+                <button onclick="handleLogin()" class="w-full bg-[#00a884] py-5 rounded-2xl font-black text-[#111b21] shadow-xl uppercase">Login</button>
+            </div>
+        </section>
+
+        <main id="page-main" class="page">
+            <header class="bg-[#202c33] p-5 flex justify-between items-center border-b border-white/5">
+                <h1 class="text-2xl font-black italic">VibeChat <span class="text-[#00a884]">v45</span></h1>
+                <div class="flex gap-6 text-[#8696a0] text-xl"><i class="fas fa-search"></i><i class="fas fa-ellipsis-vertical"></i></div>
+            </header>
+
+            <div class="flex-1 overflow-hidden relative">
+                <div id="tab-chat" class="tab-content active-tab divide-y divide-white/5"></div>
+                
+                <div id="tab-status" class="tab-content p-6">
+                    <div class="flex items-center gap-4 mb-10 bg-[#202c33] p-4 rounded-2xl cursor-pointer" onclick="document.getElementById('status-upload').click()">
+                        <div class="relative">
+                            <img id="st-my-img" class="w-16 h-16 rounded-full object-cover sultan-ring">
+                            <input type="file" id="status-upload" class="hidden" accept="image/*" onchange="actionUploadStatus(event)">
+                            <div class="absolute bottom-0 right-0 bg-[#00a884] rounded-full w-6 h-6 flex items-center justify-center border-4 border-[#202c33]"><i class="fas fa-plus text-[10px] text-[#111b21]"></i></div>
+                        </div>
+                        <div><p class="font-black">Status Saya</p><p class="text-xs text-gray-500 uppercase">Update Vibe Sultan</p></div>
+                    </div>
+                    <p class="text-[10px] font-black text-[#00a884] mb-6 uppercase tracking-widest">Teman Sultan</p>
+                    <div id="status-list" class="space-y-6"></div>
+                </div>
+
+                <div id="tab-profil" class="tab-content p-8">
+                    <div class="relative w-44 h-44 mx-auto mb-10">
+                        <img id="pr-my-img" class="w-full h-full rounded-full object-cover border-4 border-[#00a884]">
+                        <label class="absolute bottom-2 right-2 bg-[#00a884] w-12 h-12 rounded-full flex items-center justify-center cursor-pointer border-4 border-[#111b21]">
+                            <i class="fas fa-camera text-[#111b21]"></i>
+                            <input type="file" class="hidden" onchange="actionUploadAvatar(event)">
+                        </label>
+                    </div>
+                    <div class="space-y-4">
+                        <input id="pr-my-name" class="bg-[#202c33] p-5 rounded-2xl w-full outline-none font-black text-white">
+                        <input id="pr-my-bio" class="bg-[#202c33] p-5 rounded-2xl w-full outline-none text-white italic" placeholder="Bio Sultan">
+                        <button onclick="actionUpdateProfile()" class="w-full bg-[#00a884] py-5 rounded-2xl font-black text-[#111b21] uppercase">Update Identity</button>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="bg-[#202c33] flex justify-around py-5 border-t border-white/5 z-40 mb-2">
+                <button onclick="switchTab('chat', this)" class="nav-btn text-[#00a884] flex-1 flex flex-col items-center gap-1"><i class="fas fa-comment-dots text-2xl"></i><span class="text-[10px] font-black uppercase">Chats</span></button>
+                <button onclick="switchTab('status', this)" class="nav-btn text-[#8696a0] flex-1 flex flex-col items-center gap-1"><i class="fas fa-circle-notch text-2xl"></i><span class="text-[10px] font-black uppercase">Status</span></button>
+                <button onclick="switchTab('profil', this)" class="nav-btn text-[#8696a0] flex-1 flex flex-col items-center gap-1"><i class="fas fa-user-shield text-2xl"></i><span class="text-[10px] font-black uppercase">Profil</span></button>
+            </nav>
+            <button onclick="openModalNew()" class="fixed bottom-28 right-8 bg-[#00a884] text-[#111b21] w-16 h-16 rounded-2xl shadow-2xl flex items-center justify-center z-50"><i class="fas fa-plus text-2xl"></i></button>
+        </main>
+
+        <section id="page-chat-room" class="page bg-vibe">
+            <header class="bg-[#202c33] p-4 flex items-center gap-4 shrink-0 z-50">
+                <i class="fas fa-arrow-left text-[#8696a0] text-xl cursor-pointer" onclick="closeChat()"></i>
+                <img id="room-img" class="w-11 h-11 rounded-full object-cover cursor-pointer" onclick="openRoomInfo()">
+                <div class="flex-1 cursor-pointer" onclick="openRoomInfo()">
+                    <h3 id="room-name" class="font-black text-white truncate">...</h3>
+                    <p id="room-status" class="text-[11px] font-black text-gray-500">Offline</p>
+                </div>
+            </header>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-5 flex flex-col gap-4"></div>
+            <footer class="p-4 bg-[#202c33] flex gap-3 items-center">
+                <input type="text" id="msg-input" placeholder="Kirim vibe..." class="flex-1 bg-[#2a3942] p-4 rounded-2xl outline-none text-white text-sm">
+                <button onclick="actionSendMessage()" class="bg-[#00a884] w-14 h-14 rounded-full flex items-center justify-center text-[#111b21] shadow-xl"><i class="fas fa-paper-plane"></i></button>
+            </footer>
+        </section>
+
+        <section id="page-info" class="fixed inset-0 bg-[#0b141a] z-[100] hidden flex flex-col overflow-y-auto">
+            <div class="relative h-96 shrink-0">
+                <img id="info-img" class="w-full h-full object-cover">
+                <div class="absolute top-0 p-6 w-full flex justify-between">
+                    <i class="fas fa-arrow-left bg-black/40 p-4 rounded-2xl cursor-pointer" onclick="closeRoomInfo()"></i>
+                    <label id="btn-edit-photo" class="hidden bg-[#00a884] p-4 rounded-2xl cursor-pointer shadow-xl">
+                        <i class="fas fa-camera text-[#111b21]"></i>
+                        <input type="file" class="hidden" onchange="actionUpdateGroupPhoto(event)">
+                    </label>
+                </div>
+                <div class="absolute bottom-0 w-full p-10 bg-gradient-to-t from-[#0b141a]">
+                    <h2 id="info-name" class="text-3xl font-black text-white">...</h2>
+                    <p id="info-tag" class="text-[#00a884] font-black text-xs uppercase tracking-widest mt-2"></p>
+                </div>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="bg-[#1c272d] p-6 rounded-3xl border border-white/5">
+                    <div class="flex justify-between items-center mb-2">
+                        <p class="text-[10px] text-[#00a884] font-black uppercase">Bio Sultan</p>
+                        <i id="btn-edit-bio" class="fas fa-pen text-[#00a884] text-xs hidden cursor-pointer" onclick="actionEditGroupBio()"></i>
+                    </div>
+                    <p id="info-bio" class="text-gray-300 font-bold italic">...</p>
+                </div>
+                <div class="bg-[#1c272d] p-6 rounded-3xl border border-white/5">
+                    <p class="text-[10px] text-[#00a884] font-black uppercase mb-2">Identitas</p>
+                    <p id="info-phone" class="text-white font-black text-xl">...</p>
+                </div>
+                <div id="info-section-members" class="hidden bg-[#1c272d] p-6 rounded-3xl border border-white/5">
+                    <div class="flex justify-between items-center mb-4">
+                        <p class="text-[10px] text-[#00a884] font-black uppercase">Member Grup</p>
+                        <i id="btn-add-member" class="fas fa-user-plus text-[#00a884] hidden cursor-pointer" onclick="actionAddMemberPrompt()"></i>
+                    </div>
+                    <div id="info-members-list" class="space-y-4"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-status-view" class="fixed inset-0 bg-black z-[200] hidden flex flex-col justify-center">
+            <div class="absolute top-0 w-full p-4 z-[210] bg-gradient-to-b from-black/80">
+                <div class="w-full h-1 bg-white/20 rounded-full overflow-hidden mb-4"><div id="status-progress" class="h-full bg-white w-0 transition-all"></div></div>
+                <div class="flex justify-between items-center text-white">
+                    <div class="flex items-center gap-3">
+                        <img id="sv-avatar" class="w-10 h-10 rounded-full object-cover">
+                        <div><p id="sv-name" class="font-black text-sm"></p><p id="sv-time" class="text-[10px] opacity-70"></p></div>
+                    </div>
+                    <i class="fas fa-times text-2xl p-2 cursor-pointer" onclick="closeStatus()"></i>
+                </div>
+            </div>
+            <img id="sv-img" class="w-full max-h-screen object-contain">
+        </section>
+
+        <div id="modal-new" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-8 backdrop-blur-md">
+            <div class="bg-[#202c33] w-full rounded-[3rem] p-10 border border-white/5">
+                <h3 class="text-xl font-black mb-8 text-center uppercase">Vibe Baru</h3>
+                <input type="tel" id="new-p" placeholder="Nomor HP Sultan" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none mb-4 font-bold">
+                <button onclick="actionStartChat()" class="w-full bg-[#00a884] py-5 rounded-2xl font-black text-[#111b21] mb-6 shadow-lg">Mulai Chat</button>
+                <input type="text" id="new-g" placeholder="Nama Grup" class="w-full bg-[#2a3942] p-5 rounded-2xl outline-none mb-4 font-bold">
+                <button onclick="actionCreateGroup()" class="w-full bg-blue-600 py-5 rounded-2xl font-black text-white shadow-lg">Buat Grup</button>
+                <p onclick="closeModalNew()" class="text-center text-gray-500 mt-6 cursor-pointer font-bold uppercase text-xs">Batal</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        let myPhone = localStorage.getItem('vibe_phone');
+        let activeRoom = null;
+        let statusInterval = null;
+
+        const DEFAULT_USER = "https://files.catbox.moe/oqghhu.jpg";
+        const DEFAULT_GROUP = "https://files.catbox.moe/k53zch.jpg";
+
+        // --- TIME AGNOSTIC SULTAN ---
+        function getRelativeTime(timestamp) {
+            if (!timestamp) return "Baru saja";
+            const now = new Date();
+            const past = timestamp.toDate();
+            const diff = Math.floor((now - past) / 1000);
+            if (diff < 60) return "Baru saja";
+            if (diff < 3600) return Math.floor(diff / 60) + " Menit lalu";
+            if (diff < 86400) return Math.floor(diff / 3600) + " Jam lalu";
+            return "Kemarin";
+        }
+
+        // --- PRESENCE ---
+        function updatePresence(isOnline) {
+            if(!myPhone) return;
+            window.fb.updateDoc(window.fb.doc(window.db, "users", myPhone), {
+                presence: isOnline ? "Online" : "Offline",
+                lastSeen: window.fb.serverTimestamp()
+            });
+        }
+        document.addEventListener('visibilitychange', () => updatePresence(document.visibilityState === 'visible'));
+
+        // --- AUTH ---
+        window.handleLogin = async () => {
+            const n = document.getElementById('log-name').value;
+            const p = document.getElementById('log-phone').value;
+            if(!n || !p) return;
+            await window.fb.setDoc(window.fb.doc(window.db, "users", p), { 
+                name: n, phone: p, bio: "Vibe Sultan", photo: DEFAULT_USER, presence: "Online" 
+            }, { merge: true });
+            localStorage.setItem('vibe_phone', p);
+            location.reload();
+        };
+
+        function bootstrap() {
+            if(!myPhone) return;
+            document.getElementById('page-login').classList.remove('active-page');
+            document.getElementById('page-main').classList.add('active-page');
+            updatePresence(true);
+
+            // Listen Chats
+            window.fb.onSnapshot(window.fb.query(window.fb.collection(window.db, "users", myPhone, "recent"), window.fb.orderBy("lastUpdate", "desc")), snap => {
+                const box = document.getElementById('tab-chat'); box.innerHTML = "";
+                snap.forEach(d => {
+                    const c = d.data();
+                    box.innerHTML += `
+                    <div class="p-6 flex items-center gap-5 hover:bg-[#202c33] cursor-pointer" onclick="openChatRoom('${c.id}', '${c.name}', '${c.photo}', ${c.isGroup})">
+                        <img src="${c.photo}" class="w-16 h-16 rounded-full object-cover">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center mb-1"><h4 class="font-black text-white">${c.name}</h4><span class="text-[10px] text-[#00a884] font-black uppercase">Active</span></div>
+                            <p class="text-sm text-gray-500 truncate italic">${c.lastMsg || 'Send a vibe...'}</p>
+                        </div>
+                    </div>`;
+                });
+            });
+
+            // Listen Status + Auto Delete 24h
+            window.fb.onSnapshot(window.fb.query(window.fb.collection(window.db, "status"), window.fb.orderBy("time", "desc")), snap => {
+                const box = document.getElementById('status-list'); box.innerHTML = "";
+                const limit24h = new Date(Date.now() - 86400000);
+                snap.forEach(async d => {
+                    const s = d.data();
+                    if(s.time?.toDate() < limit24h) {
+                        await window.fb.deleteDoc(window.fb.doc(window.db, "status", d.id));
+                    } else {
+                        const relTime = getRelativeTime(s.time);
+                        box.innerHTML += `
+                        <div class="flex items-center gap-5 cursor-pointer" onclick="viewStatus('${s.photo}', '${s.name}', '${relTime}')">
+                            <div class="p-1 border-2 border-[#00a884] rounded-full"><img src="${s.photo}" class="w-14 h-14 rounded-full object-cover"></div>
+                            <div><p class="font-black text-white text-sm">${s.name}</p><p class="text-[10px] text-[#00a884] font-black uppercase">${relTime}</p></div>
+                        </div>`;
+                    }
+                });
+            });
+
+            // My Data
+            window.fb.getDoc(window.fb.doc(window.db, "users", myPhone)).then(s => {
+                const u = s.data();
+                document.getElementById('pr-my-name').value = u.name;
+                document.getElementById('pr-my-bio').value = u.bio;
+                document.getElementById('pr-my-img').src = u.photo || DEFAULT_USER;
+                document.getElementById('st-my-img').src = u.photo || DEFAULT_USER;
+            });
+        }
+
+        // --- CHAT ---
+        window.openChatRoom = (id, name, photo, isGroup) => {
+            activeRoom = { id, name, photo, isGroup };
+            document.getElementById('room-name').innerText = name;
+            document.getElementById('room-img').src = photo;
+            document.getElementById('page-main').classList.remove('active-page');
+            document.getElementById('page-chat-room').classList.add('active-page');
+
+            if(!isGroup) {
+                const targetNum = id.replace(myPhone, "").replace("_", "");
+                window.fb.onSnapshot(window.fb.doc(window.db, "users", targetNum), ds => {
+                    const st = document.getElementById('room-status');
+                    const pres = ds.data()?.presence || "Offline";
+                    st.innerText = pres;
+                    st.className = `text-[11px] font-black ${pres === 'Online' ? 'text-[#00a884]' : 'text-gray-500'}`;
+                });
+            } else {
+                window.fb.onSnapshot(window.fb.doc(window.db, "chats", id), ds => {
+                    if(ds.exists()) {
+                        document.getElementById('room-name').innerText = ds.data().name || name;
+                        document.getElementById('room-img').src = ds.data().photo || photo;
+                    }
+                });
+            }
+
+            window.fb.onSnapshot(window.fb.query(window.fb.collection(window.db, "chats", id, "messages"), window.fb.orderBy("time", "asc")), snap => {
+                const box = document.getElementById('chat-messages'); box.innerHTML = "";
+                snap.forEach(d => {
+                    const m = d.data(); const isMe = m.sender === myPhone;
+                    if(m.sender === "SYSTEM") {
+                        box.innerHTML += `<div class="flex justify-center my-2"><p class="bg-black/20 text-[10px] px-3 py-1 rounded-full text-gray-400 font-bold border border-white/5">${m.text}</p></div>`;
+                    } else {
+                        box.innerHTML += `<div class="flex ${isMe ? 'justify-end' : 'justify-start'}"><div class="${isMe ? 'bg-[#005c4b]' : 'bg-[#202c33]'} p-4 rounded-2xl max-w-[85%] shadow-md"><p class="text-white text-sm">${m.text}</p></div></div>`;
+                    }
+                });
+                box.scrollTop = box.scrollHeight;
+            });
+        };
+
+        window.actionSendMessage = async () => {
+            const inp = document.getElementById('msg-input'); if(!inp.value) return;
+            const txt = inp.value; inp.value = "";
+            const me = (await window.fb.getDoc(window.fb.doc(window.db, "users", myPhone))).data();
+            await window.fb.addDoc(window.fb.collection(window.db, "chats", activeRoom.id, "messages"), { sender: myPhone, text: txt, time: window.fb.serverTimestamp() });
+            
+            const up = { id: activeRoom.id, name: activeRoom.name, photo: activeRoom.photo, isGroup: activeRoom.isGroup, lastMsg: txt, lastUpdate: window.fb.serverTimestamp() };
+            await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", activeRoom.id), up, { merge: true });
+            if(!activeRoom.isGroup) {
+                const target = activeRoom.id.replace(myPhone, "").replace("_", "");
+                await window.fb.setDoc(window.fb.doc(window.db, "users", target, "recent", activeRoom.id), { ...up, name: me.name, photo: me.photo }, { merge: true });
+            }
+        };
+
+        // --- ADMIN & INFO ---
+        window.openRoomInfo = async () => {
+            document.getElementById('page-info').classList.remove('hidden');
+            document.getElementById('info-img').src = activeRoom.photo;
+            document.getElementById('info-name').innerText = activeRoom.name;
+
+            document.getElementById('btn-edit-photo').classList.add('hidden');
+            document.getElementById('btn-edit-bio').classList.add('hidden');
+            document.getElementById('btn-add-member').classList.add('hidden');
+
+            if(activeRoom.isGroup) {
+                const gRef = await window.fb.getDoc(window.fb.doc(window.db, "chats", activeRoom.id));
+                const gData = gRef.data();
+                const isAdmin = gData.admin === myPhone;
+
+                document.getElementById('info-tag').innerText = isAdmin ? "Grup (Anda Admin)" : "Vibe Group";
+                document.getElementById('info-phone').innerText = "ID: " + activeRoom.id;
+                document.getElementById('info-bio').innerText = gData.bio || "Premium Members";
+                document.getElementById('info-section-members').classList.remove('hidden');
+
+                if(isAdmin) {
+                    document.getElementById('btn-edit-photo').classList.remove('hidden');
+                    document.getElementById('btn-edit-bio').classList.remove('hidden');
+                    document.getElementById('btn-add-member').classList.remove('hidden');
+                }
+
+                window.fb.onSnapshot(window.fb.doc(window.db, "chats", activeRoom.id), async ds => {
+                    const box = document.getElementById('info-members-list'); box.innerHTML = "";
+                    const members = ds.data()?.members || [];
+                    for(const m of members) {
+                        const us = await window.fb.getDoc(window.fb.doc(window.db, "users", m));
+                        box.innerHTML += `<div class="flex items-center gap-3"><img src="${us.data()?.photo || DEFAULT_USER}" class="w-10 h-10 rounded-full"><p class="text-white font-bold text-sm">${us.data()?.name || m} ${m === ds.data().admin ? '⭐' : ''}</p></div>`;
+                    }
+                });
+            } else {
+                const target = activeRoom.id.replace(myPhone, "").replace("_", "");
+                const us = await window.fb.getDoc(window.fb.doc(window.db, "users", target || myPhone));
+                document.getElementById('info-tag').innerText = "Sultan Profile";
+                document.getElementById('info-bio').innerText = us.data()?.bio || "No Bio";
+                document.getElementById('info-phone').innerText = "+62 " + (us.data()?.phone || target);
+                document.getElementById('info-section-members').classList.add('hidden');
+            }
+        };
+
+        window.actionEditGroupBio = async () => {
+            const n = prompt("Bio Baru:", document.getElementById('info-bio').innerText);
+            if(n) await window.fb.updateDoc(window.fb.doc(window.db, "chats", activeRoom.id), { bio: n });
+            document.getElementById('info-bio').innerText = n;
+        };
+
+        window.actionUpdateGroupPhoto = async (e) => {
+            const r = new FileReader(); r.onload = async () => {
+                await window.fb.updateDoc(window.fb.doc(window.db, "chats", activeRoom.id), { photo: r.result });
+                await window.fb.updateDoc(window.fb.doc(window.db, "users", myPhone, "recent", activeRoom.id), { photo: r.result });
+                document.getElementById('info-img').src = r.result;
+            }; r.readAsDataURL(e.target.files[0]);
+        };
+
+        window.actionAddMemberPrompt = async () => {
+            const p = prompt("Nomor HP Sultan:"); if(!p) return;
+            const u = await window.fb.getDoc(window.fb.doc(window.db, "users", p));
+            if(!u.exists()) return alert("Sultan tidak terdaftar!");
+            await window.fb.updateDoc(window.fb.doc(window.db, "chats", activeRoom.id), { members: window.fb.arrayUnion(p) });
+            await window.fb.addDoc(window.fb.collection(window.db, "chats", activeRoom.id, "messages"), { sender: "SYSTEM", text: u.data().name + " BERGABUNG", time: window.fb.serverTimestamp() });
+            await window.fb.setDoc(window.fb.doc(window.db, "users", p, "recent", activeRoom.id), { id: activeRoom.id, name: activeRoom.name, photo: activeRoom.photo, isGroup: true, lastMsg: "Anda ditambahkan", lastUpdate: window.fb.serverTimestamp() });
+            alert("Berhasil!");
+        };
+
+        // --- STATUS ---
+        window.viewStatus = (img, name, time) => {
+            document.getElementById('sv-img').src = img;
+            document.getElementById('sv-avatar').src = img;
+            document.getElementById('sv-name').innerText = name;
+            document.getElementById('sv-time').innerText = time;
+            document.getElementById('page-status-view').classList.remove('hidden');
+            let w = 0; clearInterval(statusInterval);
+            statusInterval = setInterval(() => {
+                w += 1; document.getElementById('status-progress').style.width = w + '%';
+                if(w >= 100) closeStatus();
+            }, 50);
+        };
+        window.closeStatus = () => { document.getElementById('page-status-view').classList.add('hidden'); clearInterval(statusInterval); };
+
+        // --- ACTIONS ---
+        window.actionUploadStatus = async (e) => {
+            const r = new FileReader(); r.onload = async () => {
+                const u = (await window.fb.getDoc(window.fb.doc(window.db, "users", myPhone))).data();
+                await window.fb.addDoc(window.fb.collection(window.db, "status"), { sender: myPhone, name: u.name, photo: r.result, time: window.fb.serverTimestamp() });
+                alert("Status Terkirim!");
+            }; r.readAsDataURL(e.target.files[0]);
+        };
+        window.actionUploadAvatar = async (e) => {
+            const r = new FileReader(); r.onload = async () => {
+                await window.fb.updateDoc(window.fb.doc(window.db, "users", myPhone), { photo: r.result });
+                document.getElementById('pr-my-img').src = r.result;
+            }; r.readAsDataURL(e.target.files[0]);
+        };
+        window.actionUpdateProfile = async () => {
+            await window.fb.updateDoc(window.fb.doc(window.db, "users", myPhone), { name: document.getElementById('pr-my-name').value, bio: document.getElementById('pr-my-bio').value });
+            alert("Profil Terupdate!");
+        };
+        window.actionStartChat = async () => {
+            const p = document.getElementById('new-p').value;
+            const t = await window.fb.getDoc(window.fb.doc(window.db, "users", p));
+            if(!t.exists()) return alert("Tidak ditemukan!");
+            const rid = [myPhone, p].sort().join("_");
+            await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", rid), { id: rid, name: t.data().name, photo: t.data().photo || DEFAULT_USER, isGroup: false, lastUpdate: window.fb.serverTimestamp() });
+            openChatRoom(rid, t.data().name, t.data().photo || DEFAULT_USER, false); closeModalNew();
+        };
+        window.actionCreateGroup = async () => {
+            const n = document.getElementById('new-g').value; if(!n) return;
+            const gid = "GRP_" + Date.now();
+            await window.fb.setDoc(window.fb.doc(window.db, "chats", gid), { name: n, admin: myPhone, members: [myPhone], bio: "Grup Sultan", photo: DEFAULT_GROUP });
+            await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", gid), { id: gid, name: n, photo: DEFAULT_GROUP, isGroup: true, lastUpdate: window.fb.serverTimestamp() });
+            openChatRoom(gid, n, DEFAULT_GROUP, true); closeModalNew();
+        };
+
+        // --- NAV ---
+        window.switchTab = (tab, el) => {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-tab'));
+            document.getElementById('tab-' + tab).classList.add('active-tab');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.replace('text-[#00a884]', 'text-[#8696a0]'));
+            el.classList.replace('text-[#8696a0]', 'text-[#00a884]');
+        };
+        window.closeChat = () => { document.getElementById('page-chat-room').classList.remove('active-page'); document.getElementById('page-main').classList.add('active-page'); };
+        window.closeRoomInfo = () => document.getElementById('page-info').classList.add('hidden');
+        window.openModalNew = () => document.getElementById('modal-new').classList.remove('hidden');
+        window.closeModalNew = () => document.getElementById('modal-new').classList.add('hidden');
+
+        bootstrap();
+    </script>
+</body>
+</html>
