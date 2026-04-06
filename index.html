@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VibeChat Sultan v45 - SECURITY UPDATE</title>
+    <title>VibeChat Sultan v45 - COMPLETE EDITION</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
@@ -57,7 +57,10 @@
         <main id="page-main" class="page">
             <header class="bg-[#202c33] p-5 flex justify-between items-center border-b border-white/5">
                 <h1 class="text-2xl font-black italic">VibeChat <span class="text-[#00a884]">v45</span></h1>
-                <div class="flex gap-6 text-[#8696a0] text-xl"><i class="fas fa-search"></i><i class="fas fa-ellipsis-vertical"></i></div>
+                <div class="flex gap-6 text-[#8696a0] text-xl">
+                    <i class="fas fa-search"></i>
+                    <i class="fas fa-power-off cursor-pointer" onclick="handleLogout()"></i>
+                </div>
             </header>
 
             <div class="flex-1 overflow-hidden relative">
@@ -66,7 +69,7 @@
                 <div id="tab-status" class="tab-content p-6">
                     <div class="flex items-center gap-4 mb-10 bg-[#202c33] p-4 rounded-2xl cursor-pointer" onclick="document.getElementById('status-upload').click()">
                         <div class="relative">
-                            <img id="st-my-img" class="w-16 h-16 rounded-full object-cover sultan-ring">
+                            <img id="st-my-img" class="w-16 h-16 rounded-full object-cover sultan-ring" src="https://files.catbox.moe/oqghhu.jpg">
                             <input type="file" id="status-upload" class="hidden" accept="image/*" onchange="actionUploadStatus(event)">
                             <div class="absolute bottom-0 right-0 bg-[#00a884] rounded-full w-6 h-6 flex items-center justify-center border-4 border-[#202c33]"><i class="fas fa-plus text-[10px] text-[#111b21]"></i></div>
                         </div>
@@ -82,7 +85,7 @@
 
                 <div id="tab-profil" class="tab-content p-8">
                     <div class="relative w-44 h-44 mx-auto mb-10">
-                        <img id="pr-my-img" class="w-full h-full rounded-full object-cover border-4 border-[#00a884]">
+                        <img id="pr-my-img" class="w-full h-full rounded-full object-cover border-4 border-[#00a884]" src="https://files.catbox.moe/oqghhu.jpg">
                         <label class="absolute bottom-2 right-2 bg-[#00a884] w-12 h-12 rounded-full flex items-center justify-center cursor-pointer border-4 border-[#111b21]">
                             <i class="fas fa-camera text-[#111b21]"></i>
                             <input type="file" class="hidden" onchange="actionUploadAvatar(event)">
@@ -241,6 +244,13 @@
             location.reload();
         };
 
+        window.handleLogout = () => {
+            if(confirm("Keluar dari Sultan Mode?")){
+                localStorage.removeItem('vibe_phone');
+                location.reload();
+            }
+        };
+
         function bootstrap() {
             if(!myPhone) return;
             document.getElementById('page-login').classList.remove('active-page');
@@ -253,7 +263,7 @@
                     const c = d.data();
                     box.innerHTML += `
                     <div class="p-6 flex items-center gap-5 hover:bg-[#202c33] cursor-pointer" onclick="openChatRoom('${c.id}', '${c.name}', '${c.photo}', ${c.isGroup})">
-                        <img src="${c.photo}" class="w-16 h-16 rounded-full object-cover">
+                        <img src="${c.photo || DEFAULT_USER}" class="w-16 h-16 rounded-full object-cover">
                         <div class="flex-1">
                             <div class="flex justify-between items-center mb-1"><h4 class="font-black text-white">${c.name}</h4><span class="text-[10px] text-[#00a884] font-black uppercase">Active</span></div>
                             <p class="text-sm text-gray-500 truncate italic">${c.lastMsg || 'Send a vibe...'}</p>
@@ -270,12 +280,12 @@
                     if(s.time?.toDate() < limit24h) return;
                     const relTime = getRelativeTime(s.time);
                     const preview = s.type === 'text' ? 
-                        `<div class="w-14 h-14 rounded-full flex items-center justify-center text-[6px] p-1 text-center" style="background:${s.bgColor}">${s.text.substring(0,15)}...</div>` :
-                        `<img src="${s.photo}" class="w-14 h-14 rounded-full object-cover">`;
+                        `<div class="w-14 h-14 rounded-full flex items-center justify-center text-[6px] p-1 text-center border-2 border-white/20" style="background:${s.bgColor}">${s.text.substring(0,15)}...</div>` :
+                        `<img src="${s.photo}" class="w-14 h-14 rounded-full object-cover border-2 border-[#00a884]">`;
 
                     box.innerHTML += `
                     <div class="flex items-center gap-5 cursor-pointer" onclick='viewStatus(${JSON.stringify(s)}, "${relTime}")'>
-                        <div class="p-1 border-2 border-[#00a884] rounded-full">${preview}</div>
+                        <div class="p-0.5 border-2 border-[#00a884] rounded-full">${preview}</div>
                         <div><p class="font-black text-white text-sm">${s.name}</p><p class="text-[10px] text-[#00a884] font-black uppercase">${relTime}</p></div>
                     </div>`;
                 });
@@ -293,7 +303,7 @@
         window.openChatRoom = (id, name, photo, isGroup) => {
             activeRoom = { id, name, photo, isGroup };
             document.getElementById('room-name').innerText = name;
-            document.getElementById('room-img').src = photo;
+            document.getElementById('room-img').src = photo || (isGroup ? DEFAULT_GROUP : DEFAULT_USER);
             document.getElementById('page-main').classList.remove('active-page');
             document.getElementById('page-chat-room').classList.add('active-page');
 
@@ -346,11 +356,14 @@
             const inp = document.getElementById('msg-input'); if(!inp.value) return;
             const txt = inp.value; inp.value = "";
             const me = (await window.fb.getDoc(window.fb.doc(window.db, "users", myPhone))).data();
+            
             await window.fb.addDoc(window.fb.collection(window.db, "chats", activeRoom.id, "messages"), { 
                 sender: myPhone, text: txt, time: window.fb.serverTimestamp(), status: 'sent' 
             });
+
             const up = { id: activeRoom.id, name: activeRoom.name, photo: activeRoom.photo, isGroup: activeRoom.isGroup, lastMsg: txt, lastUpdate: window.fb.serverTimestamp() };
             await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", activeRoom.id), up, { merge: true });
+            
             if(!activeRoom.isGroup) {
                 const target = activeRoom.id.replace(myPhone, "").replace("_", "");
                 await window.fb.setDoc(window.fb.doc(window.db, "users", target, "recent", activeRoom.id), { ...up, name: me.name, photo: me.photo }, { merge: true });
@@ -359,10 +372,9 @@
 
         window.openRoomInfo = async () => {
             document.getElementById('page-info').classList.remove('hidden');
-            document.getElementById('info-img').src = activeRoom.photo;
+            document.getElementById('info-img').src = activeRoom.photo || (activeRoom.isGroup ? DEFAULT_GROUP : DEFAULT_USER);
             document.getElementById('info-name').innerText = activeRoom.name;
             
-            // RESET SECURITY UI
             document.getElementById('btn-edit-photo').classList.add('hidden');
             document.getElementById('btn-edit-bio').classList.add('hidden');
             document.getElementById('btn-add-member').classList.add('hidden');
@@ -388,7 +400,7 @@
                     const box = document.getElementById('info-members-list'); box.innerHTML = "";
                     for(const m of ds.data().members) {
                         const us = await window.fb.getDoc(window.fb.doc(window.db, "users", m));
-                        box.innerHTML += `<div class="flex items-center gap-3"><img src="${us.data()?.photo || DEFAULT_USER}" class="w-10 h-10 rounded-full"><p class="text-white font-bold text-sm">${us.data()?.name || m} ${m === ds.data().admin ? '⭐' : ''}</p></div>`;
+                        box.innerHTML += `<div class="flex items-center gap-3"><img src="${us.data()?.photo || DEFAULT_USER}" class="w-10 h-10 rounded-full object-cover"><p class="text-white font-bold text-sm">${us.data()?.name || m} ${m === ds.data().admin ? '⭐' : ''}</p></div>`;
                     }
                 });
             } else {
@@ -476,6 +488,7 @@
             const r = new FileReader(); r.onload = async () => {
                 await window.fb.updateDoc(window.fb.doc(window.db, "users", myPhone), { photo: r.result });
                 document.getElementById('pr-my-img').src = r.result;
+                document.getElementById('st-my-img').src = r.result;
             }; r.readAsDataURL(e.target.files[0]);
         };
         window.actionUpdateProfile = async () => {
@@ -491,11 +504,17 @@
         };
         window.actionStartChat = async () => {
             const p = document.getElementById('new-p').value;
+            if(!p) return;
             const t = await window.fb.getDoc(window.fb.doc(window.db, "users", p));
-            if(!t.exists()) return alert("Sultan tidak ada!");
+            let targetName = "Sultan " + p;
+            let targetPhoto = DEFAULT_USER;
+            if(t.exists()) {
+                targetName = t.data().name;
+                targetPhoto = t.data().photo || DEFAULT_USER;
+            }
             const rid = [myPhone, p].sort().join("_");
-            await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", rid), { id: rid, name: t.data().name, photo: t.data().photo || DEFAULT_USER, isGroup: false, lastUpdate: window.fb.serverTimestamp() });
-            openChatRoom(rid, t.data().name, t.data().photo || DEFAULT_USER, false); closeModalNew();
+            await window.fb.setDoc(window.fb.doc(window.db, "users", myPhone, "recent", rid), { id: rid, name: targetName, photo: targetPhoto, isGroup: false, lastUpdate: window.fb.serverTimestamp() });
+            openChatRoom(rid, targetName, targetPhoto, false); closeModalNew();
         };
         window.actionCreateGroup = async () => {
             const n = document.getElementById('new-g').value; if(!n) return;
